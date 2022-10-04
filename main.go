@@ -84,9 +84,9 @@ func (r *kapp) deploy(ctx context.Context, app *string, namespace *string, kubeC
 	kappArgs := []string{"kapp", "deploy", "-y", "-n", *namespace, "-a", *app}
 
 	if *url == "" {
-		kappArgs = append(kappArgs, []string{"-a", "/source"}...)
+		kappArgs = append(kappArgs, []string{"-f", "/source"}...)
 	} else {
-		kappArgs = append(kappArgs, []string{"-a", *url}...)
+		kappArgs = append(kappArgs, []string{"-f", *url}...)
 	}
 
 	client, err := dagger.Client(ctx)
@@ -179,7 +179,7 @@ func deploy(ctx context.Context, client graphql.Client, fsid dagger.FSID, image 
 			query ($fsid: FSID!, $image: FSID!, $args: [String!]!, $file: String!) {
 				core {
 					filesystem(id: $image) {
-						copy(from: $fsid, include: [$file]){
+						copy(from: $fsid, include: [$file], destPath: "/source"){
 							exec(
 								input:{
 									args: $args,
