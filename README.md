@@ -14,17 +14,17 @@ A dagger extension for kapp operations
 
 ## Example
 ```gql
-query($fs: FSID!) {
+query LoadCred() {
   kapp {
-    loadCredentials(fs: $fs, kc: "kubeconfig")
+    loadCredentials(kubeconfig: "kubeconfig")
   }
 }
 ```
 
 ```gql
-query($fs: FSID!, $kubeConfig: SecretID!) {
+query Deploy($kubeConfig: SecretID!) {
   kapp {
-    deploy(fs: $fs, kubeConfig: $kubeConfig, app: "my-app", file: "deploy.yaml")
+    deploy(app: "nginx", directory: ".", file: "deploy.yaml", kubeconfig: $kubeConfig,namespace: "default", url: "")
   }
 }
 ```

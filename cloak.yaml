@@ -1,4 +1,0 @@
-name: kapp
-extensions:
-  - path: .
-    sdk: go
