@@ -2,10 +2,9 @@ module github.com/laupse/dagger-kapp
 
 go 1.19
 
-require go.dagger.io/dagger v0.2.35-0.20221018005246-c9f7c1148c43
+require dagger.io/dagger v0.3.0
 
 require (
-	dagger.io/dagger v0.2.35-0.20221022102410-a0117476aed9 // indirect
 	github.com/Khan/genqlient v0.5.0 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
@@ -16,6 +15,7 @@ require (
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/containerd/ttrpc v1.1.0 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
+	github.com/dagger/dagger v0.3.2 // indirect
 	github.com/docker/cli v20.10.17+incompatible // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.17+incompatible // indirect
