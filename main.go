@@ -10,29 +10,15 @@ import (
 type Kapp struct {
 }
 
-func (Kapp) LoadCredentials(ctx context.Context, directoryId string, kubeconfig string) (dagger.SecretID, error) {
-
-	client, err := dagger.Connect(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	secretId, err := client.
-		Host().
-		Workdir().
-		Read().
-		Directory(".").
-		File(kubeconfig).
-		Secret().
-		ID(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return secretId, nil
-}
-
-func (Kapp) Deploy(ctx context.Context, app string, directory string, namespace string, url string, file string, kubeconfig dagger.SecretID) (string, error) {
+func (Kapp) Deploy(
+	ctx context.Context,
+	app string,
+	directory string,
+	namespace string,
+	url string,
+	fileName string,
+	kubeconfig string,
+) (string, error) {
 
 	if app == "" {
 		return "", fmt.Errorf("app name is required")
@@ -51,44 +37,27 @@ func (Kapp) Deploy(ctx context.Context, app string, directory string, namespace 
 		return "", err
 	}
 
-	fileId, err := client.
-		Host().
-		Workdir().
-		Read().
-		Directory(directory).
-		File(file).
-		ID(ctx)
-	if err != nil {
-		return "", err
-	}
+	workdir := client.Host().Workdir()
 
-	containerId, err := client.
-		Container().
+	file := workdir.Directory(directory).File(fileName)
+
+	kubeconfigSecret := workdir.Directory(".").File(kubeconfig).Secret()
+
+	container := client.Container().
 		From("ghcr.io/vmware-tanzu/carvel-docker-image").
-		WithMountedSecret("/root/.kube/config", kubeconfig).
-		ID(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	container := client.Container(dagger.ContainerOpts{
-		ID: containerId,
-	})
+		WithMountedSecret("/root/.kube/config", kubeconfigSecret)
 
 	var output string
 	if url == "" {
 		execOpts.Args = append(execOpts.Args, "/source")
 		output, err = container.
+			WithMountedFile("/source", file).
 			Exec(execOpts).
-			WithMountedFile("/source", fileId).
 			Stdout().
 			Contents(ctx)
 	} else {
 		execOpts.Args = append(execOpts.Args, url)
-		output, err = container.
-			Exec(execOpts).
-			Stdout().
-			Contents(ctx)
+		output, err = container.Exec(execOpts).Stdout().Contents(ctx)
 	}
 
 	if err != nil {
