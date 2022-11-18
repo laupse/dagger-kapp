@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"path"
 
 	"dagger.io/dagger"
 )
@@ -16,7 +17,6 @@ func (Kapp) Deploy(
 	directory string,
 	namespace string,
 	url string,
-	fileName string,
 	kubeconfig string,
 ) (string, error) {
 
@@ -28,10 +28,6 @@ func (Kapp) Deploy(
 		namespace = "default"
 	}
 
-	execOpts := dagger.ContainerExecOpts{
-		Args: []string{"kapp", "deploy", "-y", "-n", namespace, "-a", app, "-f"},
-	}
-
 	client, err := dagger.Connect(ctx)
 	if err != nil {
 		return "", err
@@ -39,29 +35,29 @@ func (Kapp) Deploy(
 
 	workdir := client.Host().Workdir()
 
-	file := workdir.Directory(directory).File(fileName)
+	file := workdir.Directory(directory)
 
-	kubeconfigSecret := workdir.Directory(".").File(kubeconfig).Secret()
+	kubeconfigPath, kubeconfigFilename := path.Split(kubeconfig)
+	kubeconfigSecret := client.Host().Directory(kubeconfigPath).File(kubeconfigFilename).Secret()
 
 	container := client.Container().
 		From("ghcr.io/vmware-tanzu/carvel-docker-image").
 		WithMountedSecret("/root/.kube/config", kubeconfigSecret)
 
-	var output string
-	if url == "" {
-		execOpts.Args = append(execOpts.Args, "/source")
-		output, err = container.
-			WithMountedFile("/source", file).
-			Exec(execOpts).
-			Stdout().
-			Contents(ctx)
-	} else {
-		execOpts.Args = append(execOpts.Args, url)
-		output, err = container.Exec(execOpts).Stdout().Contents(ctx)
+	execOpts := dagger.ContainerExecOpts{
+		Args: []string{"kapp", "deploy", "-y", "-n", namespace, "-a", app, "-f"},
 	}
 
+	if url == "" {
+		execOpts.Args = append(execOpts.Args, "/source")
+		container = container.WithMountedDirectory("/source", file)
+	} else {
+		execOpts.Args = append(execOpts.Args, url)
+	}
+
+	output, err := container.Exec(execOpts).Stdout().Contents(ctx)
 	if err != nil {
-		return "", err
+		return output, err
 	}
 
 	return output, nil
